@@ -1,180 +1,165 @@
-# Išlaidų Sekimo Programos Ataskaita
+# Išlaidų Sekiklio Programos Ataskaita
 
 ## 1. Įvadas
 
-### Kas yra mano aplikacija?
+### 1.1 Programos tikslas
 
-Ši aplikacija yra paprasta išlaidų sekimo programa, parašyta Python kalba. Ji leidžia vartotojui įvesti vienkartines ir pasikartojančias išlaidas, peržiūrėti įrašus, ištrinti pasirinktą įrašą ir apskaičiuoti bendrą išleistą sumą.
+Šios programos tikslas yra padėti vartotojui sekti savo kasdienes išlaidas. Programa leidžia pridėti naujas išlaidas, peržiūrėti jau įvestus įrašus, ištrinti pasirinktą įrašą bei apskaičiuoti bendrą visų išlaidų sumą.
 
-### Kaip paleisti programą?
+### 1.2 Ka daro ši programa?
 
-Programą galima paleisti terminale su komanda:
+Tai yra konsolinė Python programa, skirta paprastam išlaidų valdymui. Ji veikia terminale, todėl nereikalauja grafinės sąsajos ar papildomų bibliotekų. Visi duomenys saugomi CSV faile, todėl programa yra lengvai suprantama ir paprasta naudoti.
+
+### 1.3 Kaip paleisti programą?
+
+Norint paleisti programą, reikia:
+
+1. Turėti įdiegtą Python.
+2. Išsaugoti programos kodą faile, pavyzdžiui, `expense_tracker.py`.
+3. Terminale paleisti komandą:
 
 ```bash
 python expense_tracker.py
 ```
 
-Testus galima paleisti su komanda:
+### 1.4 Kaip naudotis programa?
 
-```bash
-python -m unittest test_expense_tracker.py
-```
+Paleidus programą vartotojui parodomas meniu su pasirinkimais:
 
-### Kaip naudotis programa?
+1. `Pridėti išlaidą` – leidžia įvesti naują išlaidą.
+2. `Rodyti išlaidas` – parodo visas išsaugotas išlaidas.
+3. `Ištrinti išlaidą` – leidžia pašalinti pasirinktą išlaidą pagal jos ID.
+4. `Rodyti bendrą sumą` – apskaičiuoja visų išlaidų sumą.
+5. `Išeiti` – uždaro programą.
 
-Paleidus programą ekrane rodomas meniu. Vartotojas gali:
+## 2. Programos analizė
 
-1. pridėti vienkartinę išlaidą;
-2. pridėti pasikartojančią išlaidą;
-3. peržiūrėti visas išlaidas;
-4. ištrinti išlaidą pagal ID;
-5. pamatyti bendrą sumą;
-6. išeiti iš programos.
+### 2.1 Programos veikimo principas
 
-Duomenys išsaugomi `expenses.csv` faile, todėl uždarius programą jie nedingsta.
+Programa sukurta naudojant klasę `IslaiduSekiklis`, kuri atsakinga už visą pagrindinę logiką. Ši klasė:
 
-## 2. Analizė
+- įkelia duomenis iš CSV failo;
+- išsaugo duomenis į CSV failą;
+- prideda naujas išlaidas;
+- parodo išlaidų sąrašą;
+- ištrina pasirinktą išlaidą;
+- apskaičiuoja bendrą išlaidų sumą.
 
-### Funkciniai reikalavimai
+Programa saugo duomenis faile `islaidos.csv`, todėl uždarius programą informacija išlieka.
 
-Programa atitinka pagrindinius funkcinius reikalavimus:
+### 2.2 Duomenų skaitymas ir rašymas į failą
 
-- leidžia pridėti išlaidų įrašus;
-- leidžia saugoti ir nuskaityti duomenis iš CSV failo;
-- leidžia peržiūrėti įrašus;
-- leidžia ištrinti įrašus;
-- apskaičiuoja bendrą išleistą sumą.
-
-### 4 OOP principai
-
-#### Abstrakcija
-
-Abstrakcija realizuota naudojant abstrakčią klasę `FinancialRecord`.
+Programoje naudojamas CSV failo formatas. Duomenų failas apibrėžtas taip:
 
 ```python
-class FinancialRecord(ABC):
-    @abstractmethod
-    def record_type(self) -> str:
-        ...
+DUOMENU_FAILAS = Path("islaidos.csv")
 ```
 
-Ši klasė apibrėžia bendrą struktūrą visiems finansiniams įrašams, tačiau pati nėra naudojama tiesiogiai. Ji pateikia bendrus laukus ir bendrą sąsają kitoms klasėms.
-
-#### Paveldėjimas
-
-Paveldėjimas panaudotas klasėse `Expense` ir `RecurringExpense`.
+Duomenų nuskaitymas vyksta metode `ikrauti_islaidas()`:
 
 ```python
-class Expense(FinancialRecord):
-    ...
-
-class RecurringExpense(Expense):
-    ...
+with self.failo_vardas.open("r", encoding="utf-8", newline="") as failas:
+    skaitytuvas = csv.DictReader(failas)
 ```
 
-`Expense` paveldi bendrą logiką iš `FinancialRecord`, o `RecurringExpense` papildomai išplečia `Expense` klasę su `billing_cycle` lauku.
-
-#### Inkapsuliacija
-
-Inkapsuliacija realizuota naudojant privačius laukus ir `property` metodus.
+Duomenų išsaugojimas vyksta metode `issaugoti_islaidas()`:
 
 ```python
-@property
-def amount(self) -> float:
-    return self._amount
-
-@amount.setter
-def amount(self, value: float) -> None:
-    if value <= 0:
-        raise ValueError("Amount must be greater than 0.")
-    self._amount = round(value, 2)
+with self.failo_vardas.open("w", encoding="utf-8", newline="") as failas:
+    rasytuvas = csv.DictWriter(failas, fieldnames=laukai)
 ```
 
-Tokiu būdu duomenys yra tikrinami prieš priskyrimą. Tai apsaugo programą nuo neteisingų reikšmių.
+CSV formatas pasirinktas todėl, kad jis yra paprastas, lengvai suprantamas ir patogus mažos apimties duomenims saugoti.
 
-#### Polimorfizmas
+### 2.3 Klasės panaudojimas
 
-Polimorfizmas panaudotas dirbant su skirtingais įrašų tipais per tą pačią sąsają.
+Pagrindinė programos klasė yra:
 
 ```python
-for record in records:
-    print(record.display_text())
+class IslaiduSekiklis:
 ```
 
-Nors `records` sąraše gali būti tiek `Expense`, tiek `RecurringExpense` objektai, programa juos apdoroja vienodai. Kiekviena klasė pati nusprendžia, kaip turi atrodyti jos tipas ir atvaizdavimas.
-
-### Projektavimo šablonas
-
-Programoje panaudotas `Factory Method` šablonas.
+Šios klasės objektas sukuriamas pagrindinėje funkcijoje:
 
 ```python
-class RecordFactory:
-    @staticmethod
-    def create_record(...):
-        if normalized_type == "expense":
-            return Expense(...)
-        if normalized_type == "recurring":
-            return RecurringExpense(...)
+sekiklis = IslaiduSekiklis(DUOMENU_FAILAS)
 ```
 
-Šis šablonas pasirinktas todėl, kad programoje reikia kurti skirtingų tipų objektus. Vietoje to, kad objektų kūrimo logika būtų išmėtyta skirtingose vietose, ji yra centralizuota vienoje klasėje. Tai daro kodą aiškesnį ir lengviau plečiamą.
+Tai leidžia tvarkingai atskirti duomenų valdymo logiką nuo vartotojo meniu.
 
-`Factory Method` šiuo atveju yra tinkamesnis už, pavyzdžiui, `Singleton`, nes pagrindinis tikslas yra ne vieno objekto egzistavimo užtikrinimas, o skirtingų objektų kūrimas pagal pasirinktą tipą.
+### 2.4 Metodų paaiškinimas
 
-### Kompozicija ir agregacija
+#### `ikrauti_islaidas()`
 
-Kompozicija programoje naudojama taip:
+Šis metodas nuskaito informaciją iš CSV failo ir įkelia ją į sąrašą `self.islaidos`.
 
-- `ExpenseTrackerApp` sudaryta iš `ExpenseTracker` ir `ConsolePrinter`;
-- `ExpenseTracker` naudoja `CSVStorage` duomenims saugoti.
+#### `issaugoti_islaidas()`
 
-Agregacija programoje matoma per `ExpenseTracker` klasę, kuri saugo finansinių įrašų sąrašą:
+Šis metodas įrašo visas esamas išlaidas į CSV failą.
 
-```python
-self._records = storage.load_records()
-```
+#### `prideti_islaida()`
 
-Šis sąrašas gali turėti kelis skirtingus objektus, kurie egzistuoja kaip atskiri vienetai.
+Leidžia vartotojui įvesti sumą ir kategoriją. Programa patikrina, ar suma yra teisinga ir didesnė už nulį, tada sukuria naują įrašą.
 
-### Skaitymas iš failo ir rašymas į failą
+#### `rodyti_islaidas()`
 
-Programa naudoja CSV failą `expenses.csv`.
+Parodo visas išlaidas ekrane.
 
-Skaitymas:
+#### `istrinti_islaida()`
 
-```python
-def load_records(self) -> list[FinancialRecord]:
-```
+Leidžia ištrinti įrašą pagal jo ID.
 
-Rašymas:
+#### `rodyti_bendra_suma()`
 
-```python
-def save_records(self, records: list[FinancialRecord]) -> None:
-```
+Apskaičiuoja ir parodo bendrą visų išlaidų sumą.
 
-CSV formatas pasirinktas todėl, kad jis yra paprastas, aiškus ir lengvai atidaromas su kitomis programomis, pvz., Excel.
+#### `sutvarkyti_id()`
 
-### Testavimas
+Po ištrynimo atnaujina ID reikšmes, kad jos būtų nuoseklios.
 
-Pagrindinis funkcionalumas padengtas `unittest` testais faile `test_expense_tracker.py`.
+## 3. Funkciniai reikalavimai
 
-Patikrinti šie atvejai:
+Programa įgyvendina šias pagrindines funkcijas:
 
-- ar `RecordFactory` sukuria teisingą objektą;
-- ar teisingai pridedamos išlaidos;
-- ar teisingai apskaičiuojama bendra suma;
-- ar įrašai ištrinami teisingai;
-- ar duomenys sėkmingai išsaugomi ir vėl nuskaityti.
+- naujų išlaidų pridėjimą;
+- išlaidų rodymą;
+- išlaidų trynimą;
+- bendros sumos skaičiavimą;
+- duomenų saugojimą faile;
+- duomenų nuskaitymą iš failo.
 
-## 3. Rezultatai ir išvados
+## 4. Kodo kokybė ir stilius
 
-- Sukurta veikianti išlaidų sekimo programa, kuri leidžia pridėti, saugoti, peržiūrėti ir trinti išlaidų įrašus.
-- Programoje sėkmingai įgyvendinti visi keturi objektinio programavimo principai.
-- Pasirinktas `Factory Method` šablonas padėjo aiškiai atskirti objektų kūrimo logiką nuo kitos programos logikos.
-- Kompozicijos ir agregacijos principai padarė programos struktūrą aiškesnę ir lengviau prižiūrimą.
-- Projektą būtų galima plėsti pridedant kategorijų filtravimą, mėnesines ataskaitas, grafinę sąsają arba duomenų bazę vietoje CSV failo.
+Programa parašyta Python kalba ir naudoja aiškius metodų bei kintamųjų pavadinimus lietuvių kalba. Kode logika suskirstyta į atskirus metodus, todėl programą lengviau skaityti ir prižiūrėti.
 
-## 4. Šaltiniai
+Naudotos standartinės Python bibliotekos:
 
-- Python dokumentacija: [https://docs.python.org/3/](https://docs.python.org/3/)
-- PEP 8 stiliaus gairės: [https://peps.python.org/pep-0008/](https://peps.python.org/pep-0008/)
+- `csv` – darbui su CSV failais;
+- `pathlib.Path` – failo keliui aprašyti;
+- `datetime` – datos generavimui.
+
+## 5. Rezultatai
+
+- Sukurta veikianti konsolinė išlaidų sekimo programa.
+- Vartotojas gali pridėti, peržiūrėti ir ištrinti išlaidas.
+- Programa teisingai apskaičiuoja bendrą išlaidų sumą.
+- Duomenys saugomi CSV faile, todėl informacija neprarandama uždarius programą.
+- Programa yra paprasta, aiški ir lengvai plečiama ateityje.
+
+## 6. Išvados
+
+Šiame darbe buvo sukurta paprasta išlaidų sekimo programa naudojant Python kalbą. Programa leidžia atlikti pagrindinius finansinių įrašų valdymo veiksmus ir saugo duomenis CSV faile. Toks sprendimas yra patogus mažam projektui, nes nereikalauja sudėtingos duomenų bazės ar papildomų technologijų.
+
+Ateityje programą būtų galima išplėsti pridedant:
+
+- išlaidų filtravimą pagal datą;
+- išlaidų skirstymą pagal daugiau kategorijų;
+- mėnesines ar savaitines ataskaitas;
+- grafinę vartotojo sąsają;
+- duomenų bazės panaudojimą vietoje CSV failo.
+
+## 7. Naudoti šaltiniai
+
+- Python oficiali dokumentacija: [https://docs.python.org/3/](https://docs.python.org/3/)
+- CSV modulio dokumentacija: [https://docs.python.org/3/library/csv.html](https://docs.python.org/3/library/csv.html)
+- Pathlib dokumentacija: [https://docs.python.org/3/library/pathlib.html](https://docs.python.org/3/library/pathlib.html)
