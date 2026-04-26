@@ -6,7 +6,7 @@
 
 Šios programos tikslas yra padėti vartotojui registruoti ir valdyti savo finansinius įrašus. Programa leidžia pridėti naujus įrašus, peržiūrėti jau išsaugotus duomenis, ištrinti pasirinktą įrašą bei apskaičiuoti bendrą finansinį rezultatą. Programa palaiko ne tik išlaidas, bet ir pajamas, todėl galima matyti tikslesnį bendrą balansą.
 
-### 1.2 Kas yra ši aplikacija?
+### 1.2 Ka daro ši programa?
 
 Tai yra konsolinė programa, parašyta Python kalba. Ji skirta paprastam asmeninių finansų sekimui. Programa veikia terminale, todėl jai nereikia grafinės vartotojo sąsajos ar išorinių bibliotekų. Visi duomenys saugomi CSV faile, todėl informacija išlieka ir uždarius programą.
 
