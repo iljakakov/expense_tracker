@@ -1,73 +1,73 @@
-import csv
-import tempfile
 import unittest
+import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
-from expense_tracker import IslaiduSekiklis
+from expense_tracker import IslaiduSekiklis, Islaida, Pajamos
 
 
-class IslaiduSekiklisTestai(unittest.TestCase):
-    def setUp(self) -> None:
-        self.laikinas_katalogas = tempfile.TemporaryDirectory()
-        self.failo_kelias = Path(self.laikinas_katalogas.name) / "test_islaidos.csv"
-        self.sekiklis = IslaiduSekiklis(self.failo_kelias)
+class TestExpenseTracker(unittest.TestCase):
+    def setUp(self):
+        IslaiduSekiklis._instance = None
+        self.temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        self.file_path = Path(self.temp_file.name)
+        self.temp_file.close()
+        self.tracker = IslaiduSekiklis(self.file_path)
 
-    def tearDown(self) -> None:
-        self.laikinas_katalogas.cleanup()
+    def tearDown(self):
+        if self.file_path.exists():
+            self.file_path.unlink()
+        IslaiduSekiklis._instance = None
 
-    def test_prideti_islaida(self) -> None:
-        with patch("builtins.input", side_effect=["12.50", "Maistas"]):
-            self.sekiklis.prideti_islaida()
+    def test_singleton(self):
+        tracker2 = IslaiduSekiklis(self.file_path)
+        self.assertIs(self.tracker, tracker2)
 
-        self.assertEqual(len(self.sekiklis.islaidos), 1)
-        self.assertEqual(self.sekiklis.islaidos[0]["suma"], "12.50")
-        self.assertEqual(self.sekiklis.islaidos[0]["kategorija"], "Maistas")
+    def test_islaida_suma(self):
+        islaida = Islaida(100, "maistas", "2026-04-26")
+        self.assertEqual(islaida.gauti_suma(), 100)
 
-    def test_bendra_suma(self) -> None:
-        self.sekiklis.islaidos = [
-            {"id": "1", "suma": "10.00", "kategorija": "Maistas", "data": "2026-04-18"},
-            {"id": "2", "suma": "5.50", "kategorija": "Transportas", "data": "2026-04-18"},
-        ]
+    def test_pajamos_suma(self):
+        pajamos = Pajamos(50, "pajamos", "2026-04-26")
+        self.assertEqual(pajamos.gauti_suma(), -50)
 
-        bendra_suma = sum(float(islaida["suma"]) for islaida in self.sekiklis.islaidos)
+    def test_sukurti_objekta_islaida(self):
+        duomenys = {
+            "id": "1",
+            "suma": "20.00",
+            "kategorija": "maistas",
+            "data": "2026-04-26",
+        }
+        obj = self.tracker.sukurti_objekta(duomenys)
+        self.assertIsInstance(obj, Islaida)
+        self.assertEqual(obj.gauti_suma(), 20)
 
-        self.assertEqual(bendra_suma, 15.50)
+    def test_sukurti_objekta_pajamos(self):
+        duomenys = {
+            "id": "2",
+            "suma": "50.00",
+            "kategorija": "pajamos",
+            "data": "2026-04-26",
+        }
+        obj = self.tracker.sukurti_objekta(duomenys)
+        self.assertIsInstance(obj, Pajamos)
+        self.assertEqual(obj.gauti_suma(), -50)
 
-    def test_istrinti_islaida(self) -> None:
-        self.sekiklis.islaidos = [
-            {"id": "1", "suma": "10.00", "kategorija": "Maistas", "data": "2026-04-18"},
-            {"id": "2", "suma": "7.00", "kategorija": "Pramogos", "data": "2026-04-18"},
-        ]
+    def test_save_and_load(self):
+        self.tracker.islaidos.append({
+            "id": "1",
+            "suma": "30.00",
+            "kategorija": "transportas",
+            "data": "2026-04-26",
+        })
 
-        with patch("builtins.input", return_value="1"):
-            self.sekiklis.istrinti_islaida()
+        self.tracker.issaugoti_islaidas()
 
-        self.assertEqual(len(self.sekiklis.islaidos), 1)
-        self.assertEqual(self.sekiklis.islaidos[0]["id"], "1")
-        self.assertEqual(self.sekiklis.islaidos[0]["kategorija"], "Pramogos")
+        IslaiduSekiklis._instance = None
+        naujas_tracker = IslaiduSekiklis(self.file_path)
 
-    def test_issaugoti_ir_ikrauti_islaidas(self) -> None:
-        self.sekiklis.islaidos = [
-            {"id": "1", "suma": "20.00", "kategorija": "Mokesciai", "data": "2026-04-18"},
-        ]
-        self.sekiklis.issaugoti_islaidas()
-
-        naujas_sekiklis = IslaiduSekiklis(self.failo_kelias)
-
-        self.assertEqual(len(naujas_sekiklis.islaidos), 1)
-        self.assertEqual(naujas_sekiklis.islaidos[0]["suma"], "20.00")
-        self.assertEqual(naujas_sekiklis.islaidos[0]["kategorija"], "Mokesciai")
-
-    def test_failas_sukuriamas_su_teisingomis_antrastemis(self) -> None:
-        self.sekiklis.islaidos = [
-            {"id": "1", "suma": "9.99", "kategorija": "Kita", "data": "2026-04-18"},
-        ]
-        self.sekiklis.issaugoti_islaidas()
-
-        with self.failo_kelias.open("r", encoding="utf-8", newline="") as failas:
-            skaitytuvas = csv.DictReader(failas)
-            self.assertEqual(skaitytuvas.fieldnames, ["id", "suma", "kategorija", "data"])
+        self.assertEqual(len(naujas_tracker.islaidos), 1)
+        self.assertEqual(naujas_tracker.islaidos[0]["kategorija"], "transportas")
+        self.assertEqual(naujas_tracker.islaidos[0]["suma"], "30.00")
 
 
 if __name__ == "__main__":
