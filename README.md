@@ -1,4 +1,4 @@
-# Išlaidų Sekiklio Programos Ataskaita
+# Expense tracker    
 
 ## 1. Įvadas
 
